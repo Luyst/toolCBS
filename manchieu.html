@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Kích thước màn chiếu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        fieldset {
+            border: 2px solid #ccc;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        legend {
+            font-weight: 700;
+            font-size: 18px;
+            padding: 0 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container my-4">
+
+        <!-- KÍCH THƯỚC -->
+        <fieldset class="rounded-5">
+            <legend class="text-center">KÍCH THƯỚC MÀN CHIẾU</legend>
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Tỷ lệ</label>
+                    <select id="TyLe" class="form-select" onchange="TinhTuDuongCheo()">
+                        <option value="1.7778">16 : 9</option>
+                        <option value="2.35">21 : 9</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Chiều ngang lọt lòng (cm)</label>
+                    <input class="form-control" id="NgangLL" oninput="NhapNgang()">
+                </div>
+                <div class=" col-md-4">
+                    <label class="form-label">Chiều ngang phủ bì (cm)</label>
+                    <input class="form-control bg-light" id="NgangPB" readonly>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Đường chéo (inch)</label>
+                    <input class="form-control" id="DuongCheoInch" oninput="NhapDuongCheo()">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Chiều cao lọt lòng (cm)</label>
+                    <input class="form-control" id="CaoLL" oninput="NhapCao()">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Chiều cao phủ bì (cm)</label>
+                    <input class="form-control bg-light" id="CaoPB" readonly>
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- GÓC NHÌN -->
+        <fieldset class="rounded-5">
+            <legend class="text-center">GÓC NHÌN</legend>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Khoảng cách xem (cm)</label>
+                    <input class="form-control bg-light" id="KhoangCach" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Góc nhìn (độ)</label>
+                    <input class="form-control bg-light" id="GocNhin" type="number" value="30"
+                        onchange="TinhKhoangCach()" />
+
+                </div>
+            </div>
+        </fieldset>
+
+    </div>
+
+    <script>
+        const itc = 2.54;
+        const PBCm = 15;
+
+        /* ====== NHẬP ĐƯỜNG CHÉO (INCH) ====== */
+        function NhapDuongCheo() {
+            const inch = parseFloat(DuongCheoInch.value);
+            if (isNaN(inch)) return;
+
+            const tyle = parseFloat(TyLe.value);
+            const cheoCm = inch * itc;
+
+            const cao = Math.sqrt(cheoCm ** 2 / (tyle ** 2 + 1));
+            const ngang = cao * tyle;
+
+            HienThi(cheoCm, ngang, cao);
+        }
+
+        /* ====== NHẬP CHIỀU NGANG (CM) ====== */
+        function NhapNgang() {
+            const ngang = parseFloat(NgangLL.value);
+            if (isNaN(ngang)) return;
+
+            const tyle = parseFloat(TyLe.value);
+            const cao = ngang / tyle;
+            const cheoCm = Math.sqrt(ngang ** 2 + cao ** 2);
+
+            HienThi(cheoCm, ngang, cao);
+        }
+
+        /* ====== NHẬP CHIỀU CAO (CM) ====== */
+        function NhapCao() {
+            const cao = parseFloat(CaoLL.value);
+            if (isNaN(cao)) return;
+
+            const tyle = parseFloat(TyLe.value);
+            const ngang = cao * tyle;
+            const cheoCm = Math.sqrt(ngang ** 2 + cao ** 2);
+
+            HienThi(cheoCm, ngang, cao);
+        }
+
+        /* ====== HIỂN THỊ TẤT CẢ ====== */
+        function HienThi(cheoCm, ngang, cao) {
+            DuongCheoInch.value = Math.round(cheoCm / itc);
+            NgangLL.value = Math.round(ngang);
+            CaoLL.value = Math.round(cao);
+
+            NgangPB.value = Math.round(ngang + PBCm - 3);
+            CaoPB.value = Math.round(cao + PBCm - 3);
+
+            TinhKhoangCach();
+        }
+
+        /* ====== GÓC NHÌN ====== */
+        function TinhKhoangCach() {
+            const ngang = parseFloat(NgangLL.value);
+            if (isNaN(ngang)) return;
+
+            const goc = parseFloat(GocNhin.value);
+            const rad = (goc / 2) * Math.PI / 180;
+
+            const d = (ngang / 100) / (2 * Math.tan(rad));
+            KhoangCach.value = Math.round(d * 100);
+        }
+    </script>
+
+
+</body>
+
+</html>
