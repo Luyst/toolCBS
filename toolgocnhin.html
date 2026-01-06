@@ -52,10 +52,11 @@
             background: white;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            padding: 16px 0px 0px 16px;
+
             position: relative;
             height: 550px;
             border: 1px solid #cfd8dc;
+            overflow: hidden;
         }
 
         canvas {
@@ -87,6 +88,7 @@
             margin-bottom: 8px;
             font-size: 0.75em;
             color: #546e7a;
+            padding-top: 10px;
         }
 
 
@@ -277,7 +279,7 @@
         <div class="visualization-container">
             <div class="canvas-wrapper sideview">
                 <div class="canvas-header">
-                    <h2 class="canvas-title pt-3 ps-3">Mặt cắt ngang (Side View)</h2>
+                    <h2 class="canvas-title p-1 ">Mặt cắt (Side View)</h2>
                 </div>
                 <div class="canvas-container">
 
@@ -289,7 +291,7 @@
             <div class="canvas-wrapper top-view pt-4">
                 <div class="canvas-wrapper">
                     <div class="canvas-header">
-                        <h2 class="canvas-title p-3 bg-white rounded-4">Mặt bằng (Top View)</h2>
+                        <h2 class="canvas-title p-1 ">Mặt bằng (Top View)</h2>
                     </div>
                     <div class="canvas-container">
                         <canvas id="topCanvas"></canvas>
@@ -307,6 +309,7 @@
             rHeight: document.getElementById('roomHeight'),
             rWidth: document.getElementById('roomWidth'),
             sInch: document.getElementById('screenInch'),
+
             sRatio: document.getElementById('screenRatio'),
             sBot: document.getElementById('screenBottom'),
             eyeH: document.getElementById('eyeHeight'),
@@ -702,8 +705,8 @@
 
             // Tăng Padding để có chỗ vẽ các đường đo (Trên, Phải, Dưới cần nhiều chỗ hơn)
             const padTop = 60;
-            const padRight = 80;
-            const padBot = 60 + (rowCount * 25); // Tăng lề dưới động theo số hàng ghế
+            const padRight = 60;
+            const padBot = 60; // Tăng lề dưới động theo số hàng ghế
             const padLeft = 60;
 
             // Tính vùng vẽ thực tế (Drawing Area)
