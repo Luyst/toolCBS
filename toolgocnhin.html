@@ -244,23 +244,6 @@
                     </div>
                 </fieldset>
 
-                <fieldset>
-                    <legend>Góc nhìn</legend>
-
-                    <div class="row ">
-                        <div class="col-md-6">
-                            <label class="form-label">Khoảng cách xem (cm)</label>
-                            <input class="form-control bg-light" id="KhoangCach" readonly placeholder="Tự động tính">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Góc nhìn (độ)</label>
-                            <input class="form-control bg-light" id="GocNhin" type="number" value="45"
-                                onchange="TinhKhoangCach()" />
-                        </div>
-                    </div>
-                </fieldset>
-
-
                 <div class="input-group" style="margin-top:20px;">
                     <label>Cách sàn: <span id="val-screenBot" class="value-display">85</span> cm</label>
                     <input class="form-range" type="range" id="screenBottom" min="10" max="250" value="85">
@@ -294,24 +277,19 @@
         <div class="visualization-container">
             <div class="canvas-wrapper sideview">
                 <div class="canvas-header">
-                    <h2 class="canvas-title pt-3 ps-3">📐 Mặt cắt ngang (Side View)</h2>
+                    <h2 class="canvas-title pt-3 ps-3">Mặt cắt ngang (Side View)</h2>
                 </div>
                 <div class="canvas-container">
 
                     <canvas id="simCanvas"></canvas>
                 </div>
-                <div class="legend">
-                    <span class="item"><span class="line-sight-bot"></span>Tia nhìn đáy (Check che)</span>
-                    <span class="item"><span class="line-sight-top"></span>Tia nhìn đỉnh</span>
-                    <span class="item"><span class="dot dot-red"></span>Bị che</span>
-                    <span class="item" style="margin-left: auto;"><span class="line-dim"></span>Kích thước (cm)</span>
-                </div>
+
 
             </div>
-            <div class="canvas-wrapper top-view">
+            <div class="canvas-wrapper top-view pt-4">
                 <div class="canvas-wrapper">
                     <div class="canvas-header">
-                        <h2 class="canvas-title">🗺️ Mặt bằng (Top View)</h2>
+                        <h2 class="canvas-title p-3 bg-white rounded-4">Mặt bằng (Top View)</h2>
                     </div>
                     <div class="canvas-container">
                         <canvas id="topCanvas"></canvas>
@@ -390,19 +368,6 @@
             NgangPB.value = Math.round(ngang + PBCm - 3);
             CaoPB.value = Math.round(cao + PBCm - 3);
 
-            TinhKhoangCach();
-        }
-
-        /* ====== GÓC NHÌN ====== */
-        function TinhKhoangCach() {
-            const ngang = parseFloat(NgangLL.value);
-            if (isNaN(ngang)) return;
-
-            const goc = parseFloat(GocNhin.value);
-            const rad = (goc / 2) * Math.PI / 180;
-
-            const d = (ngang / 100) / (2 * Math.tan(rad));
-            KhoangCach.value = Math.round(d * 100);
         }
 
 
@@ -617,8 +582,8 @@
 
                         // --- DIM: CHIỀU CAO BỤC (Bên trái bục) ---
                         const dimX_Riser = toX(riserStartX) - 15;
-                        drawDimensionLine(ctx, dimX_Riser, toY(0), dimX_Riser, toY(floorH), `${floorH} cm`, true);
-                        drawExtensionLine(ctx, toX(riserStartX), toY(floorH), dimX_Riser, toY(floorH));
+                        drawDimensionLine(ctx, dimX_Riser + 30, toY(0), dimX_Riser + 30, toY(floorH), `${floorH} cm`, true, -50);
+
                     }
                 }
 
@@ -698,9 +663,14 @@
             // 5. VẼ DIM CHIỀU CAO PHÒNG (Cuối cùng để đè lên tất cả)
             const dimX_Right = toX(roomLen) + 20;
             // Xoá một chút nền trắng phía dưới text dim nếu cần, nhưng vẽ đè lên là đủ
-            drawDimensionLine(ctx, dimX_Right, toY(0), dimX_Right, toY(roomHeight), `${roomHeight} cm`, true);
+            drawDimensionLine(ctx, dimX_Right, toY(0), dimX_Right, toY(roomHeight), `${roomHeight} cm`, true, -50);
             drawExtensionLine(ctx, toX(roomLen), toY(roomHeight), dimX_Right, toY(roomHeight));
             drawExtensionLine(ctx, toX(roomLen), toY(0), dimX_Right, toY(0));
+
+            const dimY_top = 0 + 65;
+            drawDimensionLine(ctx, toX(0), dimY_top, toX(roomLen), dimY_top, `${roomLen} cm`, false);
+            drawExtensionLine(ctx, toX(0), toY(0), toX(0), dimY_top);
+            drawExtensionLine(ctx, toX(roomLen), toY(0), toX(roomLen), dimY_top);
         }
 
 
@@ -854,11 +824,11 @@
             // --- VẼ CÁC ĐƯỜNG ĐO (DIMENSIONS) ---
             // A. Đo Chiều Dài Phòng (Ở TRÊN)
             // Offset âm để đẩy lên trên. Giá trị -30px so với mép trên phòng
-            drawDimLine(0, 0, roomLen, 0, -30, "L: " + roomLen, false);
+            drawDimLine(0, 0, roomLen, 0, -30, "L: " + roomLen + " cm", false);
 
             // B. Đo Chiều Rộng Phòng (Ở BÊN PHẢI)
             // Offset dương 30px so với mép phải phòng
-            drawDimLine(roomLen, 0, roomLen, roomWidth, 30, "W: " + roomWidth, true);
+            drawDimLine(roomLen, 0, roomLen, roomWidth, 30, "W: " + roomWidth + " cm", true);
 
             // C. Đo Khoảng Cách Nối Tiếp (Chain Dimension - Nằm trên 1 đường thẳng)
             let prevX = 0; // Điểm bắt đầu là màn hình (X=0)
@@ -873,15 +843,15 @@
 
                 // Vẽ đường đo từ điểm cũ (prevX) đến điểm mới (currentEyeX)
                 // Y đều là roomWidth (cạnh đáy phòng)
-                drawDimLine(prevX, roomWidth, currentEyeX, roomWidth, fixedDimOffset, segmentLength, false);
+                drawDimLine(prevX, roomWidth, currentEyeX, roomWidth, fixedDimOffset, segmentLength + " cm", false);
 
                 // Cập nhật điểm bắt đầu cho vòng lặp sau là tâm ghế hiện tại
                 prevX = currentEyeX;
             }
             // D. Do chiều rộng màn hình (Ở BÊN TRÁI)
-            drawDimLine(0, 0, 0, screenY, -50, `${Math.round((roomWidth - screenWidth) / 2)}`, true);
+            drawDimLine(0, 0, 0, screenY, -50, `${Math.round((roomWidth - screenWidth) / 2)} cm`, true);
 
-            drawDimLine(0, screenY, 0, screenY + screenWidth, -50, `${Math.round(screenWidth)}`, true);
+            drawDimLine(0, screenY, 0, screenY + screenWidth, -50, `${Math.round(screenWidth)} cm`, true);
 
             // --- VẼ GHẾ VÀ TIA NHÌN---
             topCtx.textAlign = "center"; topCtx.textBaseline = "middle";
@@ -901,9 +871,9 @@
 
                 // --- 2. Vẽ tia nhìn (Nét đứt) ---
                 topCtx.beginPath();
-                topCtx.strokeStyle = (i === selectedSeatIndex) ? "rgba(255, 165, 0, 1)" : "rgba(0, 200, 0, 0.3)";
+                topCtx.strokeStyle = (i === masterSeatIndex) ? "rgba(255, 165, 0, 1)" : "rgba(0, 200, 0, 0.3)";
                 topCtx.setLineDash([2, 2]);
-                topCtx.lineWidth = (i === selectedSeatIndex) ? 2 : 1;
+                topCtx.lineWidth = (i === masterSeatIndex) ? 2 : 1;
                 topCtx.moveTo(toCX(eyeX), toCY(eyeY)); topCtx.lineTo(toCX(screenTopEdge.x), toCY(screenTopEdge.y));
                 topCtx.moveTo(toCX(eyeX), toCY(eyeY)); topCtx.lineTo(toCX(screenBotEdge.x), toCY(screenBotEdge.y));
                 topCtx.stroke();
@@ -915,7 +885,7 @@
                 const cx = toCX(seatX);
                 const cy = toCY(seatY);
                 const s = seatSize * scale; // Kích thước hiển thị thực tế
-                const isSel = (i === selectedSeatIndex);
+                const isSel = (i === masterSeatIndex);
 
                 // Màu ghế: Chọn thì Xanh Đậm (#003399), Không chọn thì Trắng (#ffffff)
                 const seatFill = isSel ? "#003399" : "#ffffff";
@@ -1013,7 +983,7 @@
 
             // 4. Xử lý khi chọn ghế
             if (clickedIndex !== -1) {
-                selectedSeatIndex = clickedIndex;
+                masterSeatIndex = clickedIndex;
                 drawTopView(); // Vẽ lại để highlight ghế vừa chọn
 
                 // Tính góc hiện tại để hiển thị trong prompt
@@ -1043,7 +1013,7 @@
                 }, 10);
             } else {
                 // Click ra ngoài thì bỏ chọn
-                selectedSeatIndex = -1;
+                masterSeatIndex = -1;
                 drawTopView();
             }
         });
@@ -1055,32 +1025,19 @@
             const rowSpace = parseInt(inputs.rowSpace.value);
             const seatSize = 50; // Kích thước ghế cố định trong code vẽ
 
-            // 1. Tính khoảng cách cần thiết từ Mắt đến Màn hình để đạt góc targetAngle
-            // Công thức: Distance = (ScreenW / 2) / tan(Angle / 2)
             const halfScreen = screenWidth / 2;
             const targetAngleRad = targetAngleDeg * (Math.PI / 180);
             const requiredEyeDist = halfScreen / Math.tan(targetAngleRad / 2);
 
-            // 2. Tính vị trí hàng đầu tiên (First Row) mới
-            // Hiện tại: EyeDist = FirstRow + (Index * RowSpace) + (SeatSize/2)
-            // => NewFirstRow = RequiredEyeDist - (Index * RowSpace) - (SeatSize/2)
-
             let newFirstRow = requiredEyeDist - (seatIndex * rowSpace) - (seatSize / 2);
-
-            // Làm tròn
             newFirstRow = Math.round(newFirstRow);
-
-            // 3. Cập nhật Input và Vẽ lại
             if (newFirstRow < 0) {
                 alert("Góc này quá lớn! Ghế sẽ bị đẩy ra khỏi phòng về phía màn hình.");
             }
-
-            // Cập nhật giá trị vào ô input của bạn
             inputs.firstRow.value = newFirstRow;
 
-            // Gọi hàm cập nhật UI/Vẽ lại (giả sử bạn có hàm update() tổng hoặc gọi drawTopView())
             drawTopView();
-            // Nếu bạn có hàm updateLabels() hay listeners input thì trigger nó
+
             if (inputs.firstRow.oninput) inputs.firstRow.oninput();
         }
 
