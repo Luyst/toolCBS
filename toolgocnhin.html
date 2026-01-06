@@ -833,24 +833,7 @@
             // Offset dương 30px so với mép phải phòng
             drawDimLine(roomLen, 0, roomLen, roomWidth, 30, "W: " + roomWidth + " cm", true);
 
-            // C. Đo Khoảng Cách Nối Tiếp (Chain Dimension - Nằm trên 1 đường thẳng)
-            let prevX = 0; // Điểm bắt đầu là màn hình (X=0)
-            const fixedDimOffset = 50; // Khoảng cách cố định từ mép phòng xuống đường đo
 
-            for (let i = 0; i < rowCount; i++) {
-                const distFromScreen = firstRowDist + (i * rowSpace);
-                const currentEyeX = distFromScreen + seatSize; // Tâm ghế hiện tại
-
-                // Tính độ dài đoạn này (Khoảng cách giữa 2 điểm đo)
-                const segmentLength = currentEyeX - prevX;
-
-                // Vẽ đường đo từ điểm cũ (prevX) đến điểm mới (currentEyeX)
-                // Y đều là roomWidth (cạnh đáy phòng)
-                drawDimLine(prevX, roomWidth, currentEyeX, roomWidth, fixedDimOffset, segmentLength + " cm", false);
-
-                // Cập nhật điểm bắt đầu cho vòng lặp sau là tâm ghế hiện tại
-                prevX = currentEyeX;
-            }
             // D. Do chiều rộng màn hình (Ở BÊN TRÁI)
             drawDimLine(0, 0, 0, screenY, -50, `${Math.round((roomWidth - screenWidth) / 2)} cm`, true);
 
@@ -932,8 +915,6 @@
                 // Tâm chữ nằm giữa phần đệm ngồi
                 topCtx.fillText(i + 1, cx + s * 0.45, cy + s * 0.5);
 
-                // --- 4. [MỚI] Vẽ đường Bục Nâng (Riser) ---
-                // Vị trí: Cạnh bên phải của ghế (seatX + seatSize)
                 const riserX = seatX + seatSize;
 
                 topCtx.beginPath();
@@ -1047,6 +1028,10 @@
 
         Object.values(inputs).forEach(el => el.addEventListener('input', draw));
         Object.values(inputs).forEach(el => el.addEventListener('input', drawTopView));
+        document.getElementById('CaoLL').addEventListener('input', draw);
+        document.getElementById('CaoLL').addEventListener('input', drawTopView);
+        document.getElementById('NgangLL').addEventListener('input', draw);
+        document.getElementById('NgangLL').addEventListener('input', drawTopView);
         window.addEventListener('resize', draw);
         window.addEventListener('resize', drawTopView);
         NhapDuongCheo();
