@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>Mô Phỏng Rạp Chiếu Phim (V7 - Final Polish)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            background: #eceff1;
+            color: #37474f;
+        }
+
+        .container {
+            display: flex;
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+
+        .controls {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            flex: 1;
+            min-width: 350px;
+        }
+
+        .visualization-container {
+            display: flex;
+            flex: 2.5;
+            flex-direction: column;
+            gap: 20px;
+
+        }
+
+        .canvas-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 16px 0px 0px 16px;
+            position: relative;
+            height: 550px;
+            border: 1px solid #cfd8dc;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        h3 {
+            margin-top: 0;
+            color: #263238;
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.3em;
+        }
+
+        .section {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.75em;
+            color: #546e7a;
+        }
+
+
+
+        .row-inputs>div {
+            flex: 1;
+        }
+
+
+        .value-display {
+            color: #0277bd;
+            font-weight: 700;
+        }
+
+        .legend {
+            font-size: 0.95em;
+            color: #546e7a;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+        }
+
+        .legend span.item {
+            display: flex;
+            align-items: center;
+        }
+
+        .legend span.dot {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            margin-right: 8px;
+            border-radius: 50%;
+        }
+
+        .dot-green {
+            background: #00c853;
+        }
+
+        .dot-red {
+            background: #d50000;
+        }
+
+        .line-dim {
+            display: inline-block;
+            width: 25px;
+            height: 2px;
+            background: #0d47a1;
+            margin-right: 8px;
+            position: relative;
+            top: -3px;
+        }
+
+        .line-dim::after,
+        .line-dim::before {
+            content: '';
+            position: absolute;
+            height: 8px;
+            width: 2px;
+            background: #0d47a1;
+            top: -3px;
+        }
+
+        .line-dim::before {
+            left: 0;
+        }
+
+        .line-dim::after {
+            right: 0;
+        }
+
+        .line-sight-top {
+            display: inline-block;
+            width: 25px;
+            height: 2px;
+            background: #b3e5fc;
+            margin-right: 8px;
+            border-bottom: 2px dashed #b3e5fc;
+        }
+
+        .line-sight-bot {
+            display: inline-block;
+            width: 25px;
+            height: 2px;
+            background: #00c853;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="controls">
+            <div class="section">
+                <h3>1. Không Gian Phòng (cm)</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Chiều dài</label><input class="form-control" type="number"
+                            id="roomLength" value="750" min="300" max="3000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Chiều rộng</label><input class="form-control" type="number"
+                            id="roomWidth" value="640" min="200" max="2000">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Chiều cao trần</label><input class="form-control" type="number"
+                            id="roomHeight" value="340" min="200" max="2000">
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <fieldset>
+                    <h3>2. Màn Chiếu</h3>
+                    <div class="row ">
+                        <div class="col-md-6">
+                            <label class="form-label">Kích thước (Inch)</label>
+                            <input class="form-control" type="number" id="screenInch" value="150" min="50" max="800"
+                                oninput="NhapDuongCheo()">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tỷ lệ</label>
+                            <select class="form-select" id="screenRatio">
+                                <option value="1.7777" selected>16:9 (TV/Phim)</option>
+                                <option value="2.35">2.35:1 (CinemaScope)</option>
+                                <option value="2.40">2.40:1 (Widescreen)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row ">
+                        <div class="col-md-6">
+                            <label class="form-label">Chiều ngang màn (cm)</label>
+                            <input class="form-control" id="NgangLL" oninput="NhapNgang()"
+                                placeholder="Nhập chiều ngang">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Chiều ngang phủ bì (cm)</label>
+                            <input class="form-control bg-light" id="NgangPB" readonly placeholder="Tự động tính">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Chiều cao màn (cm)</label>
+                            <input class="form-control" id="CaoLL" oninput="NhapCao()" placeholder="Nhập chiều cao">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Chiều cao phủ bì (cm)</label>
+                            <input class="form-control bg-light" id="CaoPB" readonly placeholder="Tự động tính">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Góc nhìn</legend>
+
+                    <div class="row ">
+                        <div class="col-md-6">
+                            <label class="form-label">Khoảng cách xem (cm)</label>
+                            <input class="form-control bg-light" id="KhoangCach" readonly placeholder="Tự động tính">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Góc nhìn (độ)</label>
+                            <input class="form-control bg-light" id="GocNhin" type="number" value="45"
+                                onchange="TinhKhoangCach()" />
+                        </div>
+                    </div>
+                </fieldset>
+
+
+                <div class="input-group" style="margin-top:20px;">
+                    <label>Cách sàn: <span id="val-screenBot" class="value-display">85</span> cm</label>
+                    <input class="form-range" type="range" id="screenBottom" min="10" max="250" value="85">
+                </div>
+            </div>
+            <div class="section">
+                <h3>3. Ghế & Bục</h3>
+                <div class="input-group">
+                    <label for="eyeHeight">Cao độ mắt: <span id="val-eyeHeight" class="value-display">115</span>
+                        cm</label>
+                    <input class="form-range" type="range" id="eyeHeight" min="100" max="130" value="115">
+                </div>
+                <div class="input-group">
+                    <label>Số hàng ghế: <span id="val-rows" class="value-display">3</span></label>
+                    <input class="form-range" type="range" id="rowCount" min="1" max="10" value="3">
+                </div>
+                <div class="input-group">
+                    <label>Hàng đầu cách màn: <span id="val-firstRow" class="value-display">350 </span> cm</label>
+                    <input class="form-range" type="range" id="firstRowDist" min="150" max="1500" value="350">
+                </div>
+                <div class="input-group">
+                    <label>Khoảng cách hàng: <span id="val-rowSpace" class="value-display">160</span> cm</label>
+                    <input class="form-range" type="range" id="rowSpacing" min="90" max="300" value="160">
+                </div>
+                <div class="input-group">
+                    <label>Độ cao giật cấp: <span id="val-riser" class="value-display">20</span> cm</label>
+                    <input class="form-range" type="range" id="riserHeight" min="0" max="100" value="20">
+                </div>
+            </div>
+        </div>
+        <div class="visualization-container">
+            <div class="canvas-wrapper sideview">
+                <div class="canvas-header">
+                    <h2 class="canvas-title pt-3 ps-3">📐 Mặt cắt ngang (Side View)</h2>
+                </div>
+                <div class="canvas-container">
+
+                    <canvas id="simCanvas"></canvas>
+                </div>
+                <div class="legend">
+                    <span class="item"><span class="line-sight-bot"></span>Tia nhìn đáy (Check che)</span>
+                    <span class="item"><span class="line-sight-top"></span>Tia nhìn đỉnh</span>
+                    <span class="item"><span class="dot dot-red"></span>Bị che</span>
+                    <span class="item" style="margin-left: auto;"><span class="line-dim"></span>Kích thước (cm)</span>
+                </div>
+
+            </div>
+            <div class="canvas-wrapper top-view">
+                <div class="canvas-wrapper">
+                    <div class="canvas-header">
+                        <h2 class="canvas-title">🗺️ Mặt bằng (Top View)</h2>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="topCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        const inputs = {
+            rLen: document.getElementById('roomLength'),
+            rHeight: document.getElementById('roomHeight'),
+            rWidth: document.getElementById('roomWidth'),
+            sInch: document.getElementById('screenInch'),
+            sRatio: document.getElementById('screenRatio'),
+            sBot: document.getElementById('screenBottom'),
+            eyeH: document.getElementById('eyeHeight'),
+            rows: document.getElementById('rowCount'),
+            firstRow: document.getElementById('firstRowDist'),
+            rowSpace: document.getElementById('rowSpacing'),
+            riser: document.getElementById('riserHeight')
+        };
+
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const itc = 2.54;
+        const PBCm = 15;
+
+        /* ====== NHẬP ĐƯỜNG CHÉO (INCH) ====== */
+        function NhapDuongCheo() {
+            const inch = parseFloat(inputs.sInch.value);
+            if (isNaN(inch)) return;
+
+            const tyle = parseFloat(inputs.sRatio.value);
+            const cheoCm = inch * itc;
+
+            const cao = Math.sqrt(cheoCm ** 2 / (tyle ** 2 + 1));
+            const ngang = cao * tyle;
+
+            HienThi(cheoCm, ngang, cao);
+        }
+
+        /* ====== NHẬP CHIỀU NGANG (CM) ====== */
+        function NhapNgang() {
+            const ngang = parseFloat(NgangLL.value);
+            if (isNaN(ngang)) return;
+
+            const tyle = parseFloat(inputs.sRatio.value);
+            const cao = ngang / tyle;
+            const cheoCm = Math.sqrt(ngang ** 2 + cao ** 2);
+
+            HienThi(cheoCm, ngang, cao);
+        }
+
+        /* ====== NHẬP CHIỀU CAO (CM) ====== */
+        function NhapCao() {
+            const cao = parseFloat(CaoLL.value);
+            if (isNaN(cao)) return;
+
+            const tyle = parseFloat(inputs.sRatio.value);
+            const ngang = cao * tyle;
+            const cheoCm = Math.sqrt(ngang ** 2 + cao ** 2);
+
+            HienThi(cheoCm, ngang, cao);
+        }
+
+        /* ====== HIỂN THỊ TẤT CẢ ====== */
+        function HienThi(cheoCm, ngang, cao) {
+            inputs.sInch.value = Math.round(cheoCm / itc);
+            NgangLL.value = Math.round(ngang);
+            CaoLL.value = Math.round(cao);
+
+            NgangPB.value = Math.round(ngang + PBCm - 3);
+            CaoPB.value = Math.round(cao + PBCm - 3);
+
+            TinhKhoangCach();
+        }
+
+        /* ====== GÓC NHÌN ====== */
+        function TinhKhoangCach() {
+            const ngang = parseFloat(NgangLL.value);
+            if (isNaN(ngang)) return;
+
+            const goc = parseFloat(GocNhin.value);
+            const rad = (goc / 2) * Math.PI / 180;
+
+            const d = (ngang / 100) / (2 * Math.tan(rad));
+            KhoangCach.value = Math.round(d * 100);
+        }
+
+
+        // Canvas drawing functions
+        function getScreenDimensions() {
+            const diagInch = parseFloat(inputs.sInch.value);
+            const ratio = parseFloat(inputs.sRatio.value);
+            const heightInch = diagInch / Math.sqrt(1 + (ratio * ratio));
+            const widthInch = heightInch * ratio;
+            return { h: heightInch * 2.54, w: widthInch * 2.54 };
+        }
+
+        function updateLabels() {
+            document.getElementById('val-screenBot').innerText = inputs.sBot.value;
+            document.getElementById('val-eyeHeight').innerText = inputs.eyeH.value;
+            document.getElementById('val-rows').innerText = inputs.rows.value;
+            document.getElementById('val-firstRow').innerText = inputs.firstRow.value;
+            document.getElementById('val-rowSpace').innerText = inputs.rowSpace.value;
+            document.getElementById('val-riser').innerText = inputs.riser.value;
+            const dims = getScreenDimensions();
+        }
+
+        // Hàm vẽ đường DIM (Dimension Line)
+        function drawDimensionLine(ctx, x1, y1, x2, y2, text, isVertical = false, offsetText = 0) {
+            ctx.save();
+            ctx.strokeStyle = "#0d47a1";
+            ctx.fillStyle = "#0d47a1";
+            ctx.lineWidth = 1;
+            ctx.font = "11px Arial";
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+
+            const tickSize = 5;
+            ctx.beginPath();
+            if (isVertical) {
+                ctx.moveTo(x1 - tickSize, y1); ctx.lineTo(x1 + tickSize, y1);
+                ctx.moveTo(x2 - tickSize, y2); ctx.lineTo(x2 + tickSize, y2);
+                ctx.textAlign = "right";
+                ctx.fillText(text, x1 - 8 - offsetText, (y1 + y2) / 2 + 4);
+            } else {
+                ctx.moveTo(x1, y1 - tickSize); ctx.lineTo(x1, y1 + tickSize);
+                ctx.moveTo(x2, y2 - tickSize); ctx.lineTo(x2, y2 + tickSize);
+                ctx.textAlign = "center";
+                ctx.fillText(text, (x1 + x2) / 2, y1 - 5 - offsetText);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Hàm vẽ đường gióng mờ (Extension Line)
+        function drawExtensionLine(ctx, x1, y1, x2, y2) {
+            ctx.save();
+            ctx.strokeStyle = "#90a4ae";
+            ctx.lineWidth = 0.5;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Hàm vẽ ghế Premium
+        function drawPremiumChair(ctx, eyeX, floorH, toX, toY, pxPerCm) {
+            const seatBackX = eyeX + 15;
+            const seatFrontX = eyeX - 40;
+            const seatBaseY = floorH;
+            const seatHeight = 40;
+            const backHeight = 105;
+            const armrestHeight = 60;
+
+            const chairColor = "#546e7a";
+            const cushionColor = "#78909c";
+            const armrestColor = "#455a64";
+
+            ctx.save();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = "#37474f";
+
+            // Chân ghế
+            ctx.fillStyle = chairColor;
+            ctx.beginPath();
+            ctx.moveTo(toX(seatFrontX + 5), toY(seatBaseY));
+            ctx.lineTo(toX(seatBackX - 5), toY(seatBaseY));
+            ctx.lineTo(toX(seatBackX - 5), toY(seatBaseY + 10));
+            ctx.lineTo(toX(seatFrontX + 5), toY(seatBaseY + 10));
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+            ctx.fillRect(toX(eyeX - 5), toY(seatBaseY + 8), toX(eyeX + 5) - toX(eyeX - 5), toY(seatBaseY + seatHeight) - toY(seatBaseY + 10));
+
+            // Đệm ngồi
+            ctx.fillStyle = cushionColor;
+            ctx.beginPath();
+            ctx.moveTo(toX(seatFrontX), toY(seatBaseY + seatHeight));
+            ctx.lineTo(toX(seatBackX), toY(seatBaseY + seatHeight));
+            ctx.quadraticCurveTo(toX(seatBackX + 5), toY(seatBaseY + seatHeight), toX(seatBackX + 5), toY(seatBaseY + seatHeight + 5));
+            ctx.lineTo(toX(seatBackX + 5), toY(seatBaseY + seatHeight + 15));
+            ctx.lineTo(toX(seatFrontX), toY(seatBaseY + seatHeight + 15));
+            ctx.quadraticCurveTo(toX(seatFrontX - 5), toY(seatBaseY + seatHeight + 15), toX(seatFrontX - 5), toY(seatBaseY + seatHeight + 5));
+            ctx.lineTo(toX(seatFrontX - 5), toY(seatBaseY + seatHeight));
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+
+            // Tựa lưng
+            ctx.beginPath();
+            ctx.moveTo(toX(seatBackX), toY(seatBaseY + seatHeight));
+            const leanBack = 10;
+            ctx.lineTo(toX(seatBackX + leanBack), toY(seatBaseY + backHeight - 20));
+            ctx.quadraticCurveTo(toX(seatBackX + leanBack + 2), toY(seatBaseY + backHeight), toX(seatBackX + leanBack + 10), toY(seatBaseY + backHeight + 5));
+            ctx.quadraticCurveTo(toX(seatBackX + leanBack + 18), toY(seatBaseY + backHeight), toX(seatBackX + leanBack + 20), toY(seatBaseY + backHeight - 20));
+            ctx.lineTo(toX(seatBackX + 15), toY(seatBaseY + seatHeight + 5));
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+
+            // Tay vịn
+            ctx.fillStyle = armrestColor;
+            ctx.beginPath();
+            ctx.moveTo(toX(seatFrontX - 2), toY(seatBaseY + armrestHeight));
+            ctx.lineTo(toX(seatBackX + 5), toY(seatBaseY + armrestHeight));
+            ctx.quadraticCurveTo(toX(seatBackX + 10), toY(seatBaseY + armrestHeight), toX(seatBackX + 10), toY(seatBaseY + armrestHeight - 5));
+            ctx.lineTo(toX(seatBackX + 10), toY(seatBaseY + armrestHeight - 10));
+            ctx.lineTo(toX(seatFrontX - 2), toY(seatBaseY + armrestHeight - 10));
+            ctx.quadraticCurveTo(toX(seatFrontX - 7), toY(seatBaseY + armrestHeight - 10), toX(seatFrontX - 7), toY(seatBaseY + armrestHeight - 5));
+            ctx.lineTo(toX(seatFrontX - 7), toY(seatBaseY + armrestHeight));
+            ctx.closePath();
+            ctx.fill(); ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function draw() {
+            updateLabels();
+
+            const roomLen = parseInt(inputs.rLen.value);
+            const roomHeight = parseInt(inputs.rHeight.value);
+            const screenDims = getScreenDimensions();
+            const screenH = screenDims.h;
+            const screenBot = parseInt(inputs.sBot.value);
+            const screenTop = screenBot + screenH;
+            const eyeFromFloor = parseInt(inputs.eyeH.value);
+            const headTopFromFloor = eyeFromFloor + 15;
+            const rowCount = parseInt(inputs.rows.value);
+            const firstRowDist = parseInt(inputs.firstRow.value);
+            const rowSpace = parseInt(inputs.rowSpace.value);
+            const riserH = parseInt(inputs.riser.value);
+
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+
+            const pL = 100, pR = 100, pT = 50, pB = 100;
+
+            const scaleX = (canvas.width - pL - pR) / roomLen;
+            const scaleY = (canvas.height - pT - pB) / roomHeight;
+            const pxPerCm = Math.min(scaleX, scaleY);
+
+            const originX = pL;
+            const originY = canvas.height - pB;
+
+            const toX = (cm) => originX + (cm * pxPerCm);
+            const toY = (cm) => originY - (cm * pxPerCm);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Vẽ Tường Phòng & Sàn
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(toX(0), toY(roomHeight), roomLen * pxPerCm, roomHeight * pxPerCm);
+            ctx.strokeStyle = "#cfd8dc"; ctx.lineWidth = 2;
+            ctx.strokeRect(toX(0), toY(roomHeight), roomLen * pxPerCm, roomHeight * pxPerCm);
+
+            // 2. Màn Hình
+            ctx.fillStyle = (screenTop > roomHeight) ? "#ef5350" : "#212121";
+            ctx.fillRect(toX(0), toY(screenTop), 8, (screenH * pxPerCm));
+
+            // --- DIM: MÀN HÌNH (Bên trái) ---
+            const dimX_Left = toX(0) - 20;
+            // Dim khoảng cách sàn -> đáy màn
+            drawDimensionLine(ctx, dimX_Left, toY(0), dimX_Left, toY(screenBot), `${screenBot} cm`, true);
+            drawExtensionLine(ctx, toX(0), toY(screenBot), dimX_Left, toY(screenBot));
+            // Dim chiều cao màn
+            drawDimensionLine(ctx, dimX_Left, toY(screenBot), dimX_Left, toY(screenTop), `${Math.round(screenH)} cm`, true);
+            drawExtensionLine(ctx, toX(0), toY(screenTop), dimX_Left, toY(screenTop));
+
+            // 3. Loop: Ghế, Bục, Người & Dims
+            let viewers = [];
+            let seatBackPositions = [];
+            for (let i = 0; i < rowCount; i++) seatBackPositions.push(firstRowDist + (i * rowSpace) + 15);
+
+            const dimY_Row = toY(0) + 50;
+
+            for (let i = 0; i < rowCount; i++) {
+                const dist = firstRowDist + (i * rowSpace);
+                const floorH = i * riserH;
+                if (dist > roomLen - 50) continue;
+
+                // Bục
+                if (floorH > 0) {
+                    let riserStartX = (i === 0) ? (dist - 120) : seatBackPositions[i - 1];
+                    let riserEndX = 1000;
+                    if (riserEndX > roomLen) riserEndX = roomLen;
+                    if (riserStartX < 0) riserStartX = 0;
+                    const riserWidth = riserEndX - riserStartX;
+
+                    if (riserWidth > 0) {
+                        ctx.fillStyle = "#eceff1";
+                        ctx.fillRect(toX(riserStartX), toY(floorH), riserWidth * pxPerCm, floorH * pxPerCm);
+                        ctx.strokeStyle = "#cfd8dc"; ctx.lineWidth = 1; ctx.setLineDash([]);
+                        ctx.strokeRect(toX(riserStartX), toY(floorH), riserWidth * pxPerCm, floorH * pxPerCm);
+
+                        // --- DIM: CHIỀU CAO BỤC (Bên trái bục) ---
+                        const dimX_Riser = toX(riserStartX) - 15;
+                        drawDimensionLine(ctx, dimX_Riser, toY(0), dimX_Riser, toY(floorH), `${floorH} cm`, true);
+                        drawExtensionLine(ctx, toX(riserStartX), toY(floorH), dimX_Riser, toY(floorH));
+                    }
+                }
+
+                // Vẽ Ghế & Người
+                drawPremiumChair(ctx, dist, floorH, toX, toY, pxPerCm);
+                const eyeX = dist;
+                const eyeY = floorH + eyeFromFloor;
+                const headY = floorH + headTopFromFloor;
+                viewers.push({ x: eyeX, y: eyeY, headY: headY, rIndex: i });
+
+                // Người
+                // 1. Vẽ Thân (Nửa trên Elip)
+                ctx.fillStyle = "#455a64"; // Màu áo
+                ctx.beginPath();
+                // Cấu trúc: ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
+                ctx.ellipse(
+                    toX(eyeX),       // Tâm X: Lùi lại sau mắt
+                    toY(floorH + 55),    // Tâm Y: Hạ thấp tâm xuống gần mặt ghế để đường cắt nằm đúng chỗ
+                    15 * pxPerCm,        // Bán kính NGANG (Vai rộng ra một chút)
+                    (eyeY - floorH - 75) * pxPerCm,        // Bán kính DỌC (Lưng dài ra vì chỉ còn nửa trên)
+                    Math.PI / 10,        // Góc nghiêng
+                    Math.PI - 0.2,             // NGẮT: Góc bắt đầu (180 độ)
+                    2 * Math.PI          // NGẮT: Góc kết thúc (360 độ) -> Chỉ vẽ nửa vòng cung phía trên
+                );
+                // Hàm fill() sẽ tự động nối điểm đầu và điểm cuối tạo thành đường cắt phẳng
+                ctx.fill();
+                // Đầu  
+                ctx.beginPath(); ctx.arc(toX(eyeX + 10), toY(eyeY - 5), 11 * pxPerCm, 0, Math.PI * 2); ctx.fillStyle = "#ffccbc"; ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = "#263238"; ctx.beginPath(); ctx.arc(toX(eyeX) + 2, toY(eyeY), 1.8, 0, Math.PI * 2); ctx.fill();
+
+                // --- DIM: KHOẢNG CÁCH GHẾ (Dưới sàn) ---
+                drawExtensionLine(ctx, toX(dist), toY(floorH), toX(dist), dimY_Row);
+                if (i === 0) {
+                    drawDimensionLine(ctx, toX(0), dimY_Row, toX(dist), dimY_Row, `${Math.round(dist)} cm`);
+                    drawExtensionLine(ctx, toX(0), toY(0), toX(0), dimY_Row);
+                } else {
+                    const prevDist = firstRowDist + ((i - 1) * rowSpace);
+                    drawDimensionLine(ctx, toX(prevDist), dimY_Row, toX(dist), dimY_Row, `${Math.round(rowSpace)} cm`);
+                }
+            }
+
+            // 4. Sightlines (Tia nhìn)
+            ctx.lineWidth = 1.5;
+            viewers.forEach(viewer => {
+                let lineBlocked = false;
+                for (let j = 0; j < viewer.rIndex; j++) {
+                    const prev = viewers[j];
+                    const slope = (viewer.y - screenBot) / viewer.x;
+                    const yAtPrev = (slope * prev.x) + screenBot;
+                    if (yAtPrev < prev.headY - 2) lineBlocked = true;
+                }
+
+                // Tia nhìn đến ĐÁY
+                ctx.beginPath();
+                ctx.moveTo(toX(viewer.x), toY(viewer.y));
+                ctx.lineTo(toX(0), toY(screenBot));
+                ctx.strokeStyle = lineBlocked ? "#d50000" : "#00c853";
+                ctx.setLineDash(lineBlocked ? [6, 4] : []);
+                ctx.stroke();
+
+                // Tia nhìn đến ĐỈNH
+                ctx.beginPath();
+                ctx.moveTo(toX(viewer.x), toY(viewer.y));
+                ctx.lineTo(toX(0), toY(screenTop));
+                ctx.strokeStyle = "#b3e5fc";
+                ctx.setLineDash([4, 4]);
+                ctx.stroke();
+
+                // Góc nhìn
+                const angleTop = Math.atan2(screenTop - viewer.y, viewer.x);
+                const angleBot = Math.atan2(screenBot - viewer.y, viewer.x);
+                const viewAngle = (angleTop - angleBot) * (180 / Math.PI);
+                ctx.fillStyle = "#0277bd"; ctx.textAlign = "center"; ctx.font = "bold 13px sans-serif"; ctx.setLineDash([]);
+                ctx.fillText(`${viewAngle.toFixed(1)}°`, toX(viewer.x), toY(viewer.headY) - 25);
+            });
+
+            // 5. VẼ DIM CHIỀU CAO PHÒNG (Cuối cùng để đè lên tất cả)
+            const dimX_Right = toX(roomLen) + 20;
+            // Xoá một chút nền trắng phía dưới text dim nếu cần, nhưng vẽ đè lên là đủ
+            drawDimensionLine(ctx, dimX_Right, toY(0), dimX_Right, toY(roomHeight), `${roomHeight} cm`, true);
+            drawExtensionLine(ctx, toX(roomLen), toY(roomHeight), dimX_Right, toY(roomHeight));
+            drawExtensionLine(ctx, toX(roomLen), toY(0), dimX_Right, toY(0));
+        }
+
+
+        // topview Canvas
+        let masterSeatIndex = -1; // luu ghế đã chọn
+        const topCanvas = document.getElementById('topCanvas');
+        const topCtx = topCanvas.getContext('2d');
+        function drawTopView() {
+            updateLabels();
+
+            // --- 1. Lấy dữ liệu ---
+            const roomLen = parseInt(inputs.rLen.value);    // Trục X
+            const roomWidth = parseInt(inputs.rWidth.value); // Trục Y
+            const screenDims = getScreenDimensions();
+            const screenWidth = parseInt(screenDims.w);
+
+            const rowCount = parseInt(inputs.rows.value);
+            const firstRowDist = parseInt(inputs.firstRow.value);
+            const rowSpace = parseInt(inputs.rowSpace.value);
+            const seatSize = 50;
+
+            // --- 2. Thiết lập Canvas & Scale ---
+            topCanvas.width = topCanvas.parentElement.offsetWidth;
+            topCanvas.height = topCanvas.parentElement.offsetHeight;
+
+            topCtx.clearRect(0, 0, topCanvas.width, topCanvas.height);
+            topCtx.fillStyle = "#ffffff";
+            topCtx.fillRect(0, 0, topCanvas.width, topCanvas.height);
+
+            // Tăng Padding để có chỗ vẽ các đường đo (Trên, Phải, Dưới cần nhiều chỗ hơn)
+            const padTop = 60;
+            const padRight = 80;
+            const padBot = 60 + (rowCount * 25); // Tăng lề dưới động theo số hàng ghế
+            const padLeft = 60;
+
+            // Tính vùng vẽ thực tế (Drawing Area)
+            const drawW = topCanvas.width - (padLeft + padRight);
+            const drawH = topCanvas.height - (padTop + padBot);
+
+            // Tính Scale
+            const scaleX = drawW / roomLen;
+            const scaleY = drawH / roomWidth;
+            const scale = Math.min(scaleX, scaleY);
+
+            // Offset để căn hình vào vùng an toàn (trong padding)
+            const offsetX = padLeft + (drawW - roomLen * scale) / 2;
+            const offsetY = padTop + (drawH - roomWidth * scale) / 2;
+
+            // Lưu params để dùng cho sự kiện click
+            topCanvas.drawingParams = { scale, offsetX, offsetY, seatSize, rowSpace, firstRowDist, roomWidth };
+
+            // Hàm chuyển đổi tọa độ
+            function toCX(val) { return offsetX + val * scale; }
+            function toCY(val) { return offsetY + val * scale; }
+
+            // --- HÀM PHỤ TRỢ: VẼ ĐƯỜNG KÍCH THƯỚC ---
+            // x1, y1: Điểm bắt đầu (trên hình)
+            // x2, y2: Điểm kết thúc (trên hình)
+            // offset: Khoảng cách từ hình ra đường đo (pixel)
+            // text: Nội dung hiển thị
+            // isVertical: true nếu đo chiều dọc, false nếu đo chiều ngang
+            // --- HÀM VẼ KÍCH THƯỚC CHUẨN (Style giống ảnh) ---
+            function drawDimLine(x1, y1, x2, y2, offset, text, isVertical) {
+                // Cấu hình Style
+                const lineColor = "#4a90e2"; // Màu xanh dương giống ảnh
+                const extColor = "#b0b0b0";  // Màu xám nhạt cho đường gióng nét đứt
+                const tickSize = 5;          // Độ dài gạch chắn đầu
+
+                topCtx.font = "bold 12px Arial";
+                topCtx.textAlign = "center";
+                topCtx.textBaseline = "bottom"; // Chữ nằm trên đường kẻ
+
+                // Tọa độ trên Canvas
+                const cx1 = toCX(x1); const cy1 = toCY(y1);
+                const cx2 = toCX(x2); const cy2 = toCY(y2);
+
+                let dx1, dy1, dx2, dy2, textX, textY;
+
+                if (isVertical) {
+                    // ĐO DỌC (Bên phải)
+                    dx1 = cx1 + offset; dy1 = cy1;
+                    dx2 = cx2 + offset; dy2 = cy2;
+                    textX = dx1 + 5;
+                    textY = (dy1 + dy2) / 2;
+                    topCtx.textAlign = "left";
+                    topCtx.textBaseline = "middle";
+                } else {
+                    // ĐO NGANG (Trên hoặc Dưới)
+                    dx1 = cx1; dy1 = cy1 + offset;
+                    dx2 = cx2; dy2 = cy2 + offset;
+                    textX = (dx1 + dx2) / 2;
+                    textY = dy1 - 2; // Cách đường kẻ 2px lên trên
+                }
+
+                // 1. Vẽ đường gióng nét đứt (Extension Lines - màu xám nhạt)
+                topCtx.beginPath();
+                topCtx.setLineDash([2, 2]); // Nét đứt
+                topCtx.strokeStyle = extColor;
+                topCtx.lineWidth = 1;
+                topCtx.moveTo(cx1, cy1); topCtx.lineTo(dx1, dy1);
+                topCtx.moveTo(cx2, cy2); topCtx.lineTo(dx2, dy2);
+                topCtx.stroke();
+                topCtx.setLineDash([]); // Reset nét liền
+
+                // 2. Vẽ đường kích thước chính (Dimension Line - màu xanh)
+                topCtx.beginPath();
+                topCtx.strokeStyle = lineColor;
+                topCtx.lineWidth = 1.5;
+                topCtx.moveTo(dx1, dy1); topCtx.lineTo(dx2, dy2);
+                topCtx.stroke();
+
+                // 3. Vẽ 2 đầu gạch chắn (Ticks/Caps - màu xanh đậm)
+                topCtx.beginPath();
+                topCtx.lineWidth = 2;
+                if (isVertical) {
+                    // Gạch ngang cho đường đo dọc
+                    topCtx.moveTo(dx1 - tickSize, dy1); topCtx.lineTo(dx1 + tickSize, dy1);
+                    topCtx.moveTo(dx2 - tickSize, dy2); topCtx.lineTo(dx2 + tickSize, dy2);
+                } else {
+                    // Gạch dọc cho đường đo ngang (Giống ảnh)
+                    topCtx.moveTo(dx1, dy1 - tickSize); topCtx.lineTo(dx1, dy1 + tickSize);
+                    topCtx.moveTo(dx2, dy2 - tickSize); topCtx.lineTo(dx2, dy2 + tickSize);
+                }
+                topCtx.stroke();
+
+                // 4. Vẽ chữ số đo (Màu xanh đậm)
+                topCtx.fillStyle = "#2c5282"; // Xanh đậm hơn cho chữ dễ đọc
+                topCtx.fillText(text, textX, textY);
+            }
+
+            // --- BẮT ĐẦU VẼ ---
+
+            // 1. Vẽ khung phòng
+            topCtx.strokeStyle = "#333"; topCtx.lineWidth = 2;
+            topCtx.strokeRect(toCX(0), toCY(0), roomLen * scale, roomWidth * scale);
+
+            // 2. Vẽ Màn hình
+            const screenX = 0;
+            const screenY = (roomWidth - screenWidth) / 2;
+            topCtx.beginPath(); topCtx.lineWidth = 5; topCtx.strokeStyle = "#000";
+            topCtx.moveTo(toCX(screenX + 5), toCY(screenY));
+            topCtx.lineTo(toCX(screenX + 5), toCY(screenY + screenWidth));
+            topCtx.stroke();
+
+            // Lưu tọa độ mép màn hình để vẽ tia
+            const screenTopEdge = { x: 0, y: screenY };
+            const screenBotEdge = { x: 0, y: screenY + screenWidth };
+
+
+
+            // --- VẼ CÁC ĐƯỜNG ĐO (DIMENSIONS) ---
+            // A. Đo Chiều Dài Phòng (Ở TRÊN)
+            // Offset âm để đẩy lên trên. Giá trị -30px so với mép trên phòng
+            drawDimLine(0, 0, roomLen, 0, -30, "L: " + roomLen, false);
+
+            // B. Đo Chiều Rộng Phòng (Ở BÊN PHẢI)
+            // Offset dương 30px so với mép phải phòng
+            drawDimLine(roomLen, 0, roomLen, roomWidth, 30, "W: " + roomWidth, true);
+
+            // C. Đo Khoảng Cách Nối Tiếp (Chain Dimension - Nằm trên 1 đường thẳng)
+            let prevX = 0; // Điểm bắt đầu là màn hình (X=0)
+            const fixedDimOffset = 50; // Khoảng cách cố định từ mép phòng xuống đường đo
+
+            for (let i = 0; i < rowCount; i++) {
+                const distFromScreen = firstRowDist + (i * rowSpace);
+                const currentEyeX = distFromScreen + seatSize; // Tâm ghế hiện tại
+
+                // Tính độ dài đoạn này (Khoảng cách giữa 2 điểm đo)
+                const segmentLength = currentEyeX - prevX;
+
+                // Vẽ đường đo từ điểm cũ (prevX) đến điểm mới (currentEyeX)
+                // Y đều là roomWidth (cạnh đáy phòng)
+                drawDimLine(prevX, roomWidth, currentEyeX, roomWidth, fixedDimOffset, segmentLength, false);
+
+                // Cập nhật điểm bắt đầu cho vòng lặp sau là tâm ghế hiện tại
+                prevX = currentEyeX;
+            }
+            // D. Do chiều rộng màn hình (Ở BÊN TRÁI)
+            drawDimLine(0, 0, 0, screenY, -50, `${Math.round((roomWidth - screenWidth) / 2)}`, true);
+
+            drawDimLine(0, screenY, 0, screenY + screenWidth, -50, `${Math.round(screenWidth)}`, true);
+
+            // --- VẼ GHẾ VÀ TIA NHÌN---
+            topCtx.textAlign = "center"; topCtx.textBaseline = "middle";
+            topCtx.font = "bold 12px Arial";
+
+            for (let i = 0; i < rowCount; i++) {
+                const distFromScreen = firstRowDist + (i * rowSpace);
+                const seatX = distFromScreen;
+                const seatY = (roomWidth - seatSize) / 2;
+                const eyeX = seatX + seatSize / 2;
+                const eyeY = seatY + seatSize / 2;
+
+                // --- 1. Tính góc ---
+                const halfScreen = screenWidth / 2;
+                const alphaRad = Math.atan(halfScreen / eyeX);
+                const totalAngleDeg = (2 * alphaRad * (180 / Math.PI)).toFixed(1);
+
+                // --- 2. Vẽ tia nhìn (Nét đứt) ---
+                topCtx.beginPath();
+                topCtx.strokeStyle = (i === selectedSeatIndex) ? "rgba(255, 165, 0, 1)" : "rgba(0, 200, 0, 0.3)";
+                topCtx.setLineDash([2, 2]);
+                topCtx.lineWidth = (i === selectedSeatIndex) ? 2 : 1;
+                topCtx.moveTo(toCX(eyeX), toCY(eyeY)); topCtx.lineTo(toCX(screenTopEdge.x), toCY(screenTopEdge.y));
+                topCtx.moveTo(toCX(eyeX), toCY(eyeY)); topCtx.lineTo(toCX(screenBotEdge.x), toCY(screenBotEdge.y));
+                topCtx.stroke();
+
+                /// --- 3. VẼ CHI TIẾT GHẾ ---
+                topCtx.setLineDash([]); // Đảm bảo nét liền
+
+                // A. Cấu hình màu sắc & Biến
+                const cx = toCX(seatX);
+                const cy = toCY(seatY);
+                const s = seatSize * scale; // Kích thước hiển thị thực tế
+                const isSel = (i === selectedSeatIndex);
+
+                // Màu ghế: Chọn thì Xanh Đậm (#003399), Không chọn thì Trắng (#ffffff)
+                const seatFill = isSel ? "#003399" : "#ffffff";
+                // Màu viền: Chọn thì Vàng (#FFD700), Không chọn thì Đen (#333)
+                const seatStroke = isSel ? "#FFD700" : "#333333";
+                // Màu chữ: Chọn thì Trắng, Không chọn thì Đen
+                const textCol = isSel ? "#ffffff" : "#000000";
+
+                topCtx.fillStyle = seatFill;
+                topCtx.strokeStyle = seatStroke;
+                topCtx.lineWidth = isSel ? 2 : 1;
+
+                // B. Vẽ các bộ phận (Giả định màn hình bên TRÁI, ghế quay mặt sang TRÁI)
+
+                // 1. Tựa lưng (Hình chữ nhật đứng ở phía sau/bên phải)
+                // Chiếm 20% chiều rộng, nằm ở cuối ô (bên phải)
+                topCtx.fillRect(cx + s * 0.8, cy, s * 0.2, s);
+                topCtx.strokeRect(cx + s * 0.8, cy, s * 0.2, s);
+
+                // 2. Hai tay vịn (Hình chữ nhật mảnh ở trên và dưới)
+                // Tay trên
+                topCtx.fillRect(cx, cy, s * 0.8, s * 0.15);
+                topCtx.strokeRect(cx, cy, s * 0.8, s * 0.15);
+                // Tay dưới
+                topCtx.fillRect(cx, cy + s * 0.85, s * 0.8, s * 0.15);
+                topCtx.strokeRect(cx, cy + s * 0.85, s * 0.8, s * 0.15);
+
+                // 3. Đệm ngồi (Hình vuông ở giữa)
+                // Nằm lọt vào trong: cách lề trái 10%, cách trên 20%
+                topCtx.fillRect(cx + s * 0.1, cy + s * 0.2, s * 0.7, s * 0.6);
+                topCtx.strokeRect(cx + s * 0.1, cy + s * 0.2, s * 0.7, s * 0.6);
+
+                // 4. Đánh số thứ tự (Ở giữa đệm ngồi)
+                topCtx.fillStyle = textCol;
+                topCtx.textAlign = "center";
+                topCtx.textBaseline = "middle";
+                // Tự động chỉnh cỡ chữ theo scale (nhưng không quá nhỏ)
+                const fontSize = Math.max(10, s * 0.4);
+                topCtx.font = "bold " + fontSize + "px Arial";
+
+                // Tâm chữ nằm giữa phần đệm ngồi
+                topCtx.fillText(i + 1, cx + s * 0.45, cy + s * 0.5);
+
+                // --- 4. [MỚI] Vẽ đường Bục Nâng (Riser) ---
+                // Vị trí: Cạnh bên phải của ghế (seatX + seatSize)
+                const riserX = seatX + seatSize;
+
+                topCtx.beginPath();
+                topCtx.setLineDash([]); // Đảm bảo nét liền
+                topCtx.strokeStyle = "#cccccc"; // Màu xám nhạt tượng trưng cho mép bậc thang
+                topCtx.lineWidth = 1;
+
+                // Vẽ từ mép trên phòng (y=0) xuống mép dưới phòng (y=roomWidth)
+                topCtx.moveTo(toCX(riserX), toCY(0));
+                topCtx.lineTo(toCX(riserX), toCY(roomWidth));
+                topCtx.stroke();
+
+                // --- 5. Hiển thị số đo góc ---
+                const textX = eyeX - (rowSpace * 0.4);
+                topCtx.fillStyle = "#000";
+                topCtx.fillText(totalAngleDeg + "°", toCX(textX), toCY(eyeY));
+            }
+        }
+
+        // --- SỰ KIỆN CLICK VÀO CANVAS ---
+        topCanvas.addEventListener('mousedown', function (e) {
+            const params = topCanvas.drawingParams;
+            if (!params) return;
+
+            // 1. Lấy tọa độ chuột trên Canvas
+            const rect = topCanvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            // 2. Chuyển đổi ngược từ pixel Canvas về tọa độ thực tế (Real World Coordinates)
+            const realX = (clickX - params.offsetX) / params.scale;
+            const realY = (clickY - params.offsetY) / params.scale;
+
+            // 3. Kiểm tra xem có click trúng ghế nào không
+            const rowCount = parseInt(inputs.rows.value);
+            let clickedIndex = -1;
+
+            for (let i = 0; i < rowCount; i++) {
+                // Tính vị trí thực của ghế thứ i
+                const seatRealX = params.firstRowDist + (i * params.rowSpace);
+                const seatRealY = (params.roomWidth - params.seatSize) / 2;
+
+                // Check va chạm (Hit test)
+                if (realX >= seatRealX && realX <= seatRealX + params.seatSize &&
+                    realY >= seatRealY && realY <= seatRealY + params.seatSize) {
+                    clickedIndex = i;
+                    break;
+                }
+            }
+
+            // 4. Xử lý khi chọn ghế
+            if (clickedIndex !== -1) {
+                selectedSeatIndex = clickedIndex;
+                drawTopView(); // Vẽ lại để highlight ghế vừa chọn
+
+                // Tính góc hiện tại để hiển thị trong prompt
+                const screenDims = getScreenDimensions();
+                const halfScreen = screenDims.w / 2;
+                const eyeX = (params.firstRowDist + (clickedIndex * params.rowSpace)) + params.seatSize / 2;
+                const currentAngle = (2 * Math.atan(halfScreen / eyeX) * (180 / Math.PI)).toFixed(1);
+
+                // --- TÍNH NĂNG CHỈNH GÓC ---
+                // Sử dụng setTimeout để UI vẽ xong highlight rồi mới hiện prompt
+                setTimeout(() => {
+                    const newAngleStr = prompt(
+                        `Bạn đang chọn ghế hàng ${clickedIndex + 1}.\n` +
+                        `Góc nhìn hiện tại: ${currentAngle}°\n` +
+                        `Nhập góc mong muốn (ghế sẽ tự di chuyển):`,
+                        currentAngle
+                    );
+
+                    if (newAngleStr !== null) {
+                        const newAngle = parseFloat(newAngleStr);
+                        if (!isNaN(newAngle) && newAngle > 0 && newAngle < 180) {
+                            adjustLayoutByAngle(clickedIndex, newAngle);
+                        } else {
+                            alert("Góc nhập không hợp lệ!");
+                        }
+                    }
+                }, 10);
+            } else {
+                // Click ra ngoài thì bỏ chọn
+                selectedSeatIndex = -1;
+                drawTopView();
+            }
+        });
+
+        // --- HÀM TÍNH TOÁN DỊCH CHUYỂN GHẾ ---
+        function adjustLayoutByAngle(seatIndex, targetAngleDeg) {
+            const screenDims = getScreenDimensions();
+            const screenWidth = parseInt(screenDims.w);
+            const rowSpace = parseInt(inputs.rowSpace.value);
+            const seatSize = 50; // Kích thước ghế cố định trong code vẽ
+
+            // 1. Tính khoảng cách cần thiết từ Mắt đến Màn hình để đạt góc targetAngle
+            // Công thức: Distance = (ScreenW / 2) / tan(Angle / 2)
+            const halfScreen = screenWidth / 2;
+            const targetAngleRad = targetAngleDeg * (Math.PI / 180);
+            const requiredEyeDist = halfScreen / Math.tan(targetAngleRad / 2);
+
+            // 2. Tính vị trí hàng đầu tiên (First Row) mới
+            // Hiện tại: EyeDist = FirstRow + (Index * RowSpace) + (SeatSize/2)
+            // => NewFirstRow = RequiredEyeDist - (Index * RowSpace) - (SeatSize/2)
+
+            let newFirstRow = requiredEyeDist - (seatIndex * rowSpace) - (seatSize / 2);
+
+            // Làm tròn
+            newFirstRow = Math.round(newFirstRow);
+
+            // 3. Cập nhật Input và Vẽ lại
+            if (newFirstRow < 0) {
+                alert("Góc này quá lớn! Ghế sẽ bị đẩy ra khỏi phòng về phía màn hình.");
+            }
+
+            // Cập nhật giá trị vào ô input của bạn
+            inputs.firstRow.value = newFirstRow;
+
+            // Gọi hàm cập nhật UI/Vẽ lại (giả sử bạn có hàm update() tổng hoặc gọi drawTopView())
+            drawTopView();
+            // Nếu bạn có hàm updateLabels() hay listeners input thì trigger nó
+            if (inputs.firstRow.oninput) inputs.firstRow.oninput();
+        }
+
+
+        Object.values(inputs).forEach(el => el.addEventListener('input', draw));
+        Object.values(inputs).forEach(el => el.addEventListener('input', drawTopView));
+        window.addEventListener('resize', draw);
+        window.addEventListener('resize', drawTopView);
+        NhapDuongCheo();
+        draw();
+        drawTopView();
+
+    </script>
+</body>
+
+</html>
